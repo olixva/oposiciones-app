@@ -1,12 +1,10 @@
 import axios from 'axios';
+import { BACKEND_URL } from '../config';
 
-// Use HTTPS URL directly to avoid Mixed Content errors
-const API_BASE_URL = 'http://127.0.0.1:8000';
-
-console.log('🔧 API_BASE_URL configured as:', API_BASE_URL);
+console.log('🔧 API_BASE_URL configured as:', BACKEND_URL);
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BACKEND_URL,
   headers: {
     'Content-Type': 'application/json',
   },
