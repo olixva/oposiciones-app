@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { BACKEND_URL } from '../config';
+import { REACT_APP_BACKEND_URL } from '../config';
 
-console.log('🔧 API_BASE_URL configured as:', BACKEND_URL);
+console.log('🔧 API_BASE_URL configured as:', REACT_APP_BACKEND_URL);
 
 const api = axios.create({
-  baseURL: BACKEND_URL,
+  baseURL: REACT_APP_BACKEND_URL,
   headers: {
     'Content-Type': 'application/json',
   },
