@@ -28,10 +28,10 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedTheme) {
+    if (activeTab === "questions") {
       loadQuestions();
     }
-  }, [selectedTheme]);
+  }, [activeTab, selectedTheme]);
 
   useEffect(() => {
     setSelectedQuestionIds([]);
