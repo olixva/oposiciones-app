@@ -38,10 +38,18 @@ class ExamRepository:
         return self.attempt_collection.find_one({"id": attempt_id}, {"_id": 0})
     
     def update_attempt(self, attempt_id: str, update_data: dict) -> bool:
-        result = self.attempt_collection.update_one(
-            {"id": attempt_id},
-            {"$set": update_data}
-        )
+        if not update_data:
+            return False
+        set_data = update_data.get("$set", {}) if "$set" in update_data else update_data.copy()
+        unset_data = update_data.get("$unset", {}) if "$unset" in update_data else {}
+        update_ops = {}
+        if set_data:
+            update_ops["$set"] = set_data
+        if unset_data:
+            update_ops["$unset"] = unset_data
+        if not update_ops:
+            return False
+        result = self.attempt_collection.update_one({"id": attempt_id}, update_ops)
         return result.modified_count > 0
     
     def get_attempts_by_user(self, user_id: str, limit: int = 50) -> List[dict]:

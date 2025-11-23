@@ -68,8 +68,33 @@ const TakeExam = () => {
     setQuestionFeedback(feedbackData);
   }, [instantFeedbackEnabled, answers, exam, buildFeedbackForQuestion]);
 
+  const clearAnswer = async (question) => {
+    const questionId = question.question_id;
+    const newAnswers = { ...answers };
+    delete newAnswers[questionId];
+    setAnswers(newAnswers);
+    setQuestionFeedback((prev) => {
+      if (!prev[questionId]) return prev;
+      const { [questionId]: _, ...rest } = prev;
+      return rest;
+    });
+
+    try {
+      await examService.submitAnswer(attemptId, questionId, null);
+    } catch (error) {
+      console.error("Error clearing answer:", error);
+    }
+  };
+
   const handleAnswerSelect = async (question, answerIndex) => {
     const questionId = question.question_id;
+    const currentlySelected = answers[questionId];
+
+    if (currentlySelected === answerIndex) {
+      await clearAnswer(question);
+      return;
+    }
+
     const newAnswers = { ...answers, [questionId]: answerIndex };
     setAnswers(newAnswers);
 
@@ -262,10 +287,13 @@ const TakeExam = () => {
                 optionClasses = "border-primary-500 bg-primary-50";
               }
 
+              const handleOptionClick = () =>
+                handleAnswerSelect(currentQuestion, index);
+
               return (
                 <button
                   key={index}
-                  onClick={() => handleAnswerSelect(currentQuestion, index)}
+                  onClick={handleOptionClick}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors relative overflow-hidden ${optionClasses}`}
                   data-testid={`answer-option-${index}`}
                 >
