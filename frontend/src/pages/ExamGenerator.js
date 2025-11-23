@@ -142,11 +142,34 @@ const ExamGenerator = () => {
   return (
     <Layout>
       <div className="max-w-5xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900" data-testid="exam-generator-heading">
-            Generar Examen
-          </h1>
-          <p className="mt-2 text-gray-600">Configura tu examen personalizado</p>
+        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900" data-testid="exam-generator-heading">
+              Generar Examen
+            </h1>
+            <p className="mt-2 text-gray-600">Configura tu examen personalizado</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/exams/history')}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 font-medium text-sm transition"
+            data-testid="exam-history-button"
+          >
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Ver historial
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6" data-testid="exam-generator-form">
