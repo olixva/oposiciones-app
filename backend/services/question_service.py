@@ -21,6 +21,15 @@ class QuestionService:
         if index is None:
             return index
         return index - 1 if index >= 1 else index
+
+    @staticmethod
+    def _question_snippet(text: Optional[str], length: int = 80) -> Optional[str]:
+        if not text:
+            return None
+        collapsed = " ".join(text.strip().split())
+        if len(collapsed) <= length:
+            return collapsed
+        return f"{collapsed[:length].rstrip()}…"
     
     def create_question(self, question_data: QuestionCreate, user_id: str) -> dict:
         # Validate theme exists
@@ -130,7 +139,8 @@ class QuestionService:
                         all_errors.append({
                             "theme_code": upload_data.theme_code,
                             "line": idx + 1,
-                            "error": "At least 2 choices required"
+                            "error": "At least 2 choices required",
+                            "question_snippet": self._question_snippet(q_data.text)
                         })
                         continue
                     
@@ -139,7 +149,8 @@ class QuestionService:
                         all_errors.append({
                             "theme_code": upload_data.theme_code,
                             "line": idx + 1,
-                            "error": "Invalid correct_answer index"
+                            "error": "Invalid correct_answer index",
+                            "question_snippet": self._question_snippet(q_data.text)
                         })
                         continue
                     
@@ -160,7 +171,8 @@ class QuestionService:
                     all_errors.append({
                         "theme_code": upload_data.theme_code,
                         "line": idx + 1,
-                        "error": str(e)
+                        "error": str(e),
+                        "question_snippet": self._question_snippet(q_data.text)
                     })
         
         return {
