@@ -15,6 +15,13 @@ class QuestionService:
         self.question_repo = QuestionRepository()
         self.theme_repo = ThemeRepository()
     
+    @staticmethod
+    def _normalize_upload_correct_answer(index: int) -> int:
+        """Bulk uploads define correct answers starting at 1; convert to 0-based."""
+        if index is None:
+            return index
+        return index - 1 if index >= 1 else index
+    
     def create_question(self, question_data: QuestionCreate, user_id: str) -> dict:
         # Validate theme exists
         theme = self.theme_repo.get_by_id(question_data.theme_id)
@@ -127,7 +134,8 @@ class QuestionService:
                         })
                         continue
                     
-                    if q_data.correct_answer < 0 or q_data.correct_answer >= len(q_data.choices):
+                    normalized_answer = self._normalize_upload_correct_answer(q_data.correct_answer)
+                    if normalized_answer < 0 or normalized_answer >= len(q_data.choices):
                         all_errors.append({
                             "theme_code": upload_data.theme_code,
                             "line": idx + 1,
@@ -140,7 +148,7 @@ class QuestionService:
                         theme_id=theme["id"],
                         text=q_data.text,
                         choices=q_data.choices,
-                        correct_answer=q_data.correct_answer,
+                        correct_answer=normalized_answer,
                         difficulty=q_data.difficulty,
                         tags=q_data.tags
                     )
@@ -186,7 +194,8 @@ class QuestionService:
                     errors.append({"position": q_data.position, "error": "At least 2 choices required"})
                     continue
                 
-                if q_data.correct_answer < 0 or q_data.correct_answer >= len(q_data.choices):
+                normalized_answer = self._normalize_upload_correct_answer(q_data.correct_answer)
+                if normalized_answer < 0 or normalized_answer >= len(q_data.choices):
                     errors.append({"position": q_data.position, "error": "Invalid correct_answer"})
                     continue
                 
