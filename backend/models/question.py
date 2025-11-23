@@ -53,3 +53,7 @@ class PracticalSetUpload(BaseModel):
     title: str
     description: str
     questions: List[PracticalSetQuestion]  # Must be exactly 15
+
+
+class BulkDeleteQuestionsRequest(BaseModel):
+    question_ids: List[str]

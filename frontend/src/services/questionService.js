@@ -1,20 +1,23 @@
-import api from './api';
+import api from "./api";
 
 export const questionService = {
   async getQuestions(themeId = null, limit = 100, skip = 0) {
     const params = { limit, skip };
     if (themeId) params.theme_id = themeId;
-    const response = await api.get('/api/questions', { params });
+    const response = await api.get("/api/questions", { params });
     return response.data;
   },
 
   async createQuestion(questionData) {
-    const response = await api.post('/api/questions', questionData);
+    const response = await api.post("/api/questions", questionData);
     return response.data;
   },
 
   async updateQuestion(questionId, questionData) {
-    const response = await api.put(`/api/questions/${questionId}`, questionData);
+    const response = await api.put(
+      `/api/questions/${questionId}`,
+      questionData
+    );
     return response.data;
   },
 
@@ -23,12 +26,19 @@ export const questionService = {
     return response.data;
   },
 
+  async deleteQuestionsBulk(questionIds) {
+    const response = await api.post("/api/questions/bulk-delete", {
+      question_ids: questionIds,
+    });
+    return response.data;
+  },
+
   async uploadBulkQuestions(file) {
     const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post('/api/questions/upload/bulk', formData, {
+    formData.append("file", file);
+    const response = await api.post("/api/questions/upload/bulk", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -36,12 +46,16 @@ export const questionService = {
 
   async uploadPracticalSet(file) {
     const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post('/api/questions/upload/practical-set', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    formData.append("file", file);
+    const response = await api.post(
+      "/api/questions/upload/practical-set",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   },
 
@@ -91,12 +105,14 @@ export const questionService = {
         },
       ],
     };
-    
-    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+
+    const blob = new Blob([JSON.stringify(template, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'plantilla-preguntas-tema.json';
+    a.download = "plantilla-preguntas-tema.json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -110,21 +126,23 @@ export const questionService = {
         position: i,
         text: `Pregunta ${i} del supuesto práctico...`,
         choices: ["Opción A", "Opción B", "Opción C", "Opción D"],
-        correct_answer: 0
+        correct_answer: 0,
       });
     }
 
     const template = {
       title: "Supuesto Práctico - Título del caso",
       description: "Descripción del caso práctico",
-      questions: questions
+      questions: questions,
     };
-    
-    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+
+    const blob = new Blob([JSON.stringify(template, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'plantilla-supuesto-practico.json';
+    a.download = "plantilla-supuesto-practico.json";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

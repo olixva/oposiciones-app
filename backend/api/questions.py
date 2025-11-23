@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, Query, File, UploadFile, HTTPException, status
 from typing import List, Optional
 from models.question import (
-    QuestionCreate, QuestionResponse, ListBulkQuestionsUpload, PracticalSetUpload
+    QuestionCreate,
+    QuestionResponse,
+    ListBulkQuestionsUpload,
+    PracticalSetUpload,
+    BulkDeleteQuestionsRequest
 )
 from services.question_service import QuestionService
 from middleware.auth import get_current_user, require_role
@@ -64,6 +68,17 @@ async def delete_question(
     question_service = get_question_service()
     success = question_service.delete_question(question_id)
     return {"message": "Question deleted successfully", "success": success}
+
+
+@router.post("/bulk-delete")
+async def bulk_delete_questions(
+    delete_request: BulkDeleteQuestionsRequest,
+    current_user: dict = Depends(require_role(["admin", "curator"]))
+):
+    """Delete multiple questions (admin/curator only)"""
+    question_service = get_question_service()
+    result = question_service.delete_questions(delete_request.question_ids)
+    return {"message": "Bulk delete finished", **result}
 
 @router.post("/upload/bulk")
 async def upload_bulk_questions(

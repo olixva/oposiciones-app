@@ -87,6 +87,20 @@ class QuestionService:
         
         return self.question_repo.delete(question_id)
     
+    def delete_questions(self, question_ids: List[str]) -> dict:
+        if not question_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No question IDs provided"
+            )
+        deleted_count = self.question_repo.delete_many(question_ids)
+        not_found = max(len(question_ids) - deleted_count, 0)
+        return {
+            "requested": len(question_ids),
+            "deleted": deleted_count,
+            "not_found": not_found
+        }
+    
     def upload_bulk_questions(self, upload_data_list: List[BulkQuestionsUpload], user_id: str) -> dict:
         """Upload multiple questions for multiple themes"""
         all_created_ids = []

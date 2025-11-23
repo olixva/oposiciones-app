@@ -45,6 +45,12 @@ class QuestionRepository:
         result = self.collection.delete_one({"id": question_id})
         return result.deleted_count > 0
     
+    def delete_many(self, question_ids: List[str]) -> int:
+        if not question_ids:
+            return 0
+        result = self.collection.delete_many({"id": {"$in": question_ids}})
+        return result.deleted_count
+    
     def get_random_by_themes(self, theme_ids: List[str], count: int) -> List[dict]:
         """Get random questions from specified themes"""
         pipeline = [
