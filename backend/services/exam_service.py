@@ -4,6 +4,9 @@ from models.exam import (
     ExamCreate, ExamInDB, QuestionSnapshot, 
     AttemptStart, AttemptInDB, AnswerSubmit
 )
+from models.user_progress import OutcomeType
+from repositories.history_repository import HistoryRepository
+import random
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
@@ -19,6 +22,7 @@ class ExamService:
     def __init__(self):
         self.exam_repo = ExamRepository()
         self.question_repo = QuestionRepository()
+        self.history_repo = HistoryRepository()
         # Import here to avoid circular dependency
         from services.analytics_service import AnalyticsService
         self.analytics_service = AnalyticsService()
@@ -38,9 +42,11 @@ class ExamService:
             )
         
         # Get random questions from themes
-        questions = self.question_repo.get_random_by_themes(
-            exam_data.theme_ids,
-            exam_data.question_count
+        # Get questions using smart selection strategy
+        questions = self._select_smart_questions(
+            theme_ids=exam_data.theme_ids,
+            count=exam_data.question_count,
+            user_id=user_id
         )
         
         if len(questions) < exam_data.question_count:
@@ -100,10 +106,10 @@ class ExamService:
         specific_theme_ids = [t["id"] for t in specific_themes]
         
         # Get 12 questions from general themes (30% of 40)
-        general_questions = self.question_repo.get_random_by_themes(general_theme_ids, 12)
+        general_questions = self._select_smart_questions(general_theme_ids, 12, user_id)
         
         # Get 28 questions from specific themes (70% of 40)
-        specific_questions = self.question_repo.get_random_by_themes(specific_theme_ids, 28)
+        specific_questions = self._select_smart_questions(specific_theme_ids, 28, user_id)
         
         if len(general_questions) < 12:
             raise HTTPException(
@@ -264,6 +270,22 @@ class ExamService:
                 user_id=user_id,
                 results=score_result["results"]
             )
+            
+            # Record question history
+            for result in score_result["results"]:
+                outcome = OutcomeType.UNANSWERED
+                if result["status"] == "correct":
+                    outcome = OutcomeType.CORRECT
+                elif result["status"] == "incorrect":
+                    outcome = OutcomeType.INCORRECT
+                    
+                self.history_repo.upsert_interaction(
+                    user_id=user_id,
+                    question_id=result["question_id"],
+                    theme_id=result.get("theme_id", "unknown"),
+                    outcome=outcome
+                )
+                
         except Exception as e:
             logger.error(f"Failed to record analytics: {e}")
             # Don't fail the attempt if analytics fails
@@ -430,3 +452,59 @@ class ExamService:
             "type": exam.get("type"),
             "question_count": len(exam.get("questions", []))
         }
+
+    def _select_smart_questions(self, theme_ids: List[str], count: int, user_id: str) -> List[dict]:
+        """
+        Select questions prioritizing:
+        1. Never seen questions (random order among them)
+        2. Questions last answered incorrectly (oldest last_seen first)
+        3. Other seen questions (oldest last_seen first)
+        """
+        # Get all candidates
+        candidates = self.question_repo.get_by_themes(theme_ids)
+        
+        if not candidates:
+            return []
+            
+        # Get user history
+        history_map = self.history_repo.get_user_history_by_themes(user_id, theme_ids)
+        
+        unseen = []
+        seen = []
+        
+        for q in candidates:
+            q_id = q.get("id")
+            if q_id in history_map:
+                # Attach history info for sorting
+                q["_history"] = history_map[q_id]
+                seen.append(q)
+            else:
+                unseen.append(q)
+        
+        # Randomize unseen to avoid same order every time for new questions
+        random.shuffle(unseen)
+        
+        # Split seen into failed and others (correct/unanswered)
+        failed = []
+        others = []
+        
+        for q in seen:
+            outcome = q["_history"].get("outcome")
+            if outcome == OutcomeType.INCORRECT:
+                failed.append(q)
+            else:
+                others.append(q)
+        
+        # Sort both groups by last_seen ascending (oldest first)
+        failed.sort(key=lambda x: x["_history"].get("last_seen", datetime.min))
+        others.sort(key=lambda x: x["_history"].get("last_seen", datetime.min))
+        
+        # Combine: Unseen first, then Failed (oldest first), then Others (oldest first)
+        selected = (unseen + failed + others)[:count]
+        
+        # Cleanup internal field
+        for q in selected:
+            if "_history" in q:
+                del q["_history"]
+                
+        return selected

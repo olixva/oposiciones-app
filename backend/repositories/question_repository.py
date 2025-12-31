@@ -60,6 +60,14 @@ class QuestionRepository:
         ]
         questions = list(self.collection.aggregate(pipeline))
         return questions
+
+    def get_by_themes(self, theme_ids: List[str]) -> List[dict]:
+        """Get all questions from specified themes"""
+        questions = list(self.collection.find(
+            {"theme_id": {"$in": theme_ids}},
+            {"_id": 0}
+        ))
+        return questions
     
     def bulk_create(self, questions: List[QuestionInDB]):
         """Bulk insert questions"""
